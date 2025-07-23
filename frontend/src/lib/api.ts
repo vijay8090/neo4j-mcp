@@ -3,13 +3,18 @@ import { ChatRequest, ChatResponse } from '@/types/chat'
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'
 
 export class ChatAPI {
-  static async sendMessage(prompt: string): Promise<ChatResponse> {
+  static async sendMessage(prompt: string, threadId?: string): Promise<ChatResponse> {
+    const requestBody: ChatRequest = { prompt }
+    if (threadId) {
+      requestBody.threadId = threadId
+    }
+
     const response = await fetch(`${API_BASE_URL}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt } as ChatRequest),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {

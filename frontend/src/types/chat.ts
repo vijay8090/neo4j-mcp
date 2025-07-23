@@ -17,4 +17,5 @@ export interface ChatResponse {
 
 export interface ChatRequest {
   prompt: string
+  threadId?: string
 } 

@@ -1,18 +1,24 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Message } from '@/types/chat'
 import { ChatAPI } from '@/lib/api'
 import { generateId } from '@/lib/utils'
 import { MessageList } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { ThemeToggle } from '../ui/ThemeToggle'
-import { AlertCircle, RefreshCw } from 'lucide-react'
+import { AlertCircle, RefreshCw, Plus } from 'lucide-react'
 
 export function ChatContainer() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [threadId, setThreadId] = useState<string>('')
+
+  // Generate initial thread ID on component mount
+  useEffect(() => {
+    setThreadId(generateId())
+  }, [])
 
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -47,8 +53,8 @@ export function ChatContainer() {
     setIsLoading(true)
 
     try {
-      // Call the chat API
-      const response = await ChatAPI.sendMessage(content)
+      // Call the chat API with the current thread ID
+      const response = await ChatAPI.sendMessage(content, threadId)
       
       if (response.success) {
         // Add assistant response
@@ -78,7 +84,7 @@ export function ChatContainer() {
     } finally {
       setIsLoading(false)
     }
-  }, [addMessage, updateMessageStatus])
+  }, [addMessage, updateMessageStatus, threadId])
 
   const handleRetry = useCallback(() => {
     // Find the last user message and resend it
@@ -93,6 +99,13 @@ export function ChatContainer() {
     setError(null)
   }, [])
 
+  const startNewChat = useCallback(() => {
+    // Generate new thread ID and clear messages
+    setThreadId(generateId())
+    setMessages([])
+    setError(null)
+  }, [])
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
@@ -103,7 +116,7 @@ export function ChatContainer() {
               MCP Chat Assistant
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Powered by Neo4j and OpenAI
+              Powered by Neo4j and OpenAI • Session: {threadId.slice(-8)}
             </p>
           </div>
           
@@ -119,10 +132,18 @@ export function ChatContainer() {
             )}
             
             <button
+              onClick={startNewChat}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              New Chat
+            </button>
+            
+            <button
               onClick={clearChat}
               className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
             >
-              Clear Chat
+              Clear
             </button>
             
             <ThemeToggle />
